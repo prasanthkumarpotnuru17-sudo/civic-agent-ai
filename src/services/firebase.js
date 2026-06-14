@@ -4,13 +4,13 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || localStorage.getItem("firebase_apiKey") || "dummy_api_key",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || localStorage.getItem("firebase_authDomain") || "dummy_domain",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || localStorage.getItem("firebase_projectId") || "dummy_project",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || localStorage.getItem("firebase_storageBucket") || "dummy_bucket",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || localStorage.getItem("firebase_messagingSenderId") || "dummy_sender",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || localStorage.getItem("firebase_appId") || "dummy_app",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || ""
 };
 
 // Initialize Firebase only once
