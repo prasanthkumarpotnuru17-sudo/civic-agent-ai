@@ -1,16 +1,354 @@
-# React + Vite
+# CivicAgent AI 🚀
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Autonomous City Governance Powered by AI Agents
 
-Currently, two official plugins are available:
+CivicAgent AI is an AI-powered citizen grievance management platform designed to transform traditional complaint handling into an intelligent, transparent, and efficient governance system.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The platform enables citizens to submit complaints, receive AI-driven analysis, track progress in real time, and interact with a modern governance portal. Administrators can manage complaints, update statuses, monitor analytics, and improve service delivery through a centralized dashboard.
 
-## React Compiler
+Built for **FAR AWAY 2026 Hackathon**.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 📌 Problem Statement
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Traditional grievance management systems often face several challenges:
+
+* Manual complaint routing
+* Delayed issue resolution
+* Lack of transparency
+* Poor citizen engagement
+* Limited tracking capabilities
+* Difficulty prioritizing urgent issues
+
+These challenges reduce efficiency and impact citizen satisfaction.
+
+---
+
+## 💡 Solution
+
+CivicAgent AI leverages Artificial Intelligence to:
+
+* Automatically classify complaints
+* Identify the responsible department
+* Predict complaint priority
+* Estimate resolution timelines
+* Enable real-time complaint tracking
+* Provide administrative analytics and insights
+
+This creates a faster, smarter, and more transparent governance workflow.
+
+---
+
+## ✨ Key Features
+
+### 👤 Citizen Portal
+
+* User Registration & Login
+* Verified Citizen Profiles
+* Complaint Submission
+* AI-Powered Complaint Analysis
+* Department Routing
+* Priority Prediction
+* ETA Estimation
+* Real-Time Complaint Tracking
+* Personal Complaint History
+* Profile Dashboard
+* AI Copilot Assistant
+
+### 🤖 AI Routing Engine
+
+* Intent Detection
+* Department Classification
+* Priority Prediction
+* Confidence Scoring
+* Location Intelligence
+* Duplicate Complaint Detection
+* Explainable AI Decisions
+
+### 🏛 Admin Dashboard
+
+* Real-Time Complaint Monitoring
+* Complaint Management
+* Status Workflow Management
+* Officer Remarks
+* Analytics Dashboard
+* Department Performance Tracking
+* Live Firestore Synchronization
+
+---
+
+## 🔄 Complaint Workflow
+
+Citizen Submits Complaint
+
+↓
+
+AI Analyzes Complaint
+
+↓
+
+Department Identified
+
+↓
+
+Priority & ETA Generated
+
+↓
+
+Complaint Stored in Firestore
+
+↓
+
+Admin Dashboard Receives Complaint
+
+↓
+
+Status Updated by Administrator
+
+↓
+
+Citizen Tracks Progress in Real Time
+
+↓
+
+Complaint Resolved
+
+---
+
+## 🧠 AI Routing Engine
+
+The AI Routing Engine analyzes complaint descriptions and determines:
+
+### Inputs
+
+* Complaint Description
+* Location
+* Category (optional)
+
+### Outputs
+
+* Department Assignment
+* Priority Level
+* Resolution ETA
+* Confidence Score
+* Routing Reasoning
+
+### Example
+
+Input:
+
+"Streetlight near school not working"
+
+Output:
+
+* Department: Electrical
+* Priority: Critical
+* ETA: 12 Hours
+* Confidence: 96%
+
+---
+
+## 🏗 System Architecture
+
+Citizen Portal (React)
+
+↓
+
+Firebase Authentication
+
+↓
+
+AI Routing Engine
+
+↓
+
+Firestore Database
+
+↓
+
+Admin Dashboard
+
+↓
+
+Complaint Tracking System
+
+↓
+
+Citizen Notifications
+
+---
+
+## 🛠 Technology Stack
+
+### Frontend
+
+* React
+* Vite
+* CSS3
+* Responsive Design
+
+### Backend & Database
+
+* Firebase Authentication
+* Cloud Firestore
+
+### Analytics
+
+* Recharts
+
+### AI Engine
+
+* Custom AI Routing Engine V3
+
+### Deployment
+
+* Firebase Hosting / Vercel
+
+---
+
+## 📊 Modules
+
+### Citizen Portal
+
+* Home Page
+* AI Demo Banner
+* Submit Complaint
+* Track Complaint
+* My Complaints
+* Profile Dashboard
+* AI Copilot
+
+### Admin Portal
+
+* Dashboard Overview
+* KPI Analytics
+* Complaint Management
+* Status Updates
+* Officer Remarks
+* Performance Insights
+
+---
+
+## 🔐 Authentication
+
+The platform supports:
+
+* Email & Password Authentication
+* Google Sign-In
+* Verified Citizen Profiles
+* Session Persistence
+
+Authenticated users benefit from:
+
+* Faster complaint submission
+* Saved preferences
+* Complaint history
+* Personalized dashboard
+
+---
+
+## 📈 Impact
+
+### Benefits for Citizens
+
+* Faster complaint resolution
+* Transparent tracking
+* Better user experience
+* Real-time updates
+
+### Benefits for Municipalities
+
+* Reduced manual workload
+* Smart resource allocation
+* Improved response times
+* Data-driven governance
+
+---
+
+## 🚀 Future Enhancements
+
+* Voice Complaint Submission
+* Multilingual Support
+* GIS Integration
+* WhatsApp Integration
+* Mobile Application
+* Predictive Analytics
+* AI Officer Assistant
+* Smart City Integrations
+
+---
+
+## ⚙ Installation
+
+Clone the repository
+
+```bash
+git clone https://github.com/your-username/civicagent-ai.git
+```
+
+Navigate to project folder
+
+```bash
+cd civicagent-ai
+```
+
+Install dependencies
+
+```bash
+npm install
+```
+
+Run development server
+
+```bash
+npm run dev
+```
+
+Create production build
+
+```bash
+npm run build
+```
+
+---
+
+## 📸 Screenshots
+
+Add screenshots of:
+
+* Home Page
+* AI Demo Banner
+* Submit Complaint
+* Complaint Tracking
+* Profile Dashboard
+* Admin Dashboard
+* Analytics Dashboard
+
+---
+
+## 🏆 Hackathon Submission
+
+**Event:** FAR AWAY 2026
+
+**Project:** CivicAgent AI
+
+**Category:** AI-Powered Smart Governance & Citizen Services
+
+---
+
+## 👥 Team
+
+Team Name: CivicAgent AI
+
+---
+
+## 📜 License
+
+This project is developed for educational, research, and hackathon purposes.
+
+---
+
+# CivicAgent AI
+
+### Where Citizen Voices Meet Intelligent Governance.
