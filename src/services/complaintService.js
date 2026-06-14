@@ -13,7 +13,7 @@ async function nextComplaintId() {
 // Read all complaints (fallback for non-realtime places, though dashboard uses onSnapshot)
 async function readComplaints() {
   const db = CivicAgentFirebase.db;
-  if (!CivicAgentFirebase.isConfigured() || !db) return [];
+  if (!db) return [];
   try {
     const q = query(collection(db, "complaints"), orderBy("createdAt", "desc"));
     const snapshot = await getDocs(q);
@@ -56,9 +56,11 @@ async function submitComplaint(payload) {
   };
 
   const db = CivicAgentFirebase.db;
-  if (!CivicAgentFirebase.isConfigured() || !db) {
+  if (!db) {
       throw new Error("Firestore is not configured. Cannot save complaint.");
   }
+  
+  console.log("db object before complaint submission: Present");
 
   const docRef = await addDoc(collection(db, "complaints"), complaint);
   complaint.docId = docRef.id;
