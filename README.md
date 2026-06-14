@@ -318,12 +318,27 @@ npm run build
 Add screenshots of:
 
 * Home Page
+  <img width="1915" height="906" alt="Screenshot 2026-06-14 122333" src="https://github.com/user-attachments/assets/b1417105-b02c-48df-a164-4c6dbbfe56dc" />
+
 * AI Demo Banner
+  <img width="1907" height="902" alt="image" src="https://github.com/user-attachments/assets/fb76b5dc-c2a1-45e6-a09c-decc0f9764ad" />
+
+ 
 * Submit Complaint
+  <img width="1607" height="898" alt="Screenshot 2026-06-14 122453" src="https://github.com/user-attachments/assets/7e5ef6a1-3025-4af8-85e2-d886f0f67690" />
+
 * Complaint Tracking
+  <img width="1601" height="876" alt="Screenshot 2026-06-14 122548" src="https://github.com/user-attachments/assets/1f75cda8-0417-4559-ab7f-e5f2346f2028" />
+
 * Profile Dashboard
+  <img width="1725" height="882" alt="image" src="https://github.com/user-attachments/assets/6a8f9b02-b27b-4aa8-9123-15520a6db8f0" />
+
 * Admin Dashboard
+  <img width="1901" height="875" alt="image" src="https://github.com/user-attachments/assets/97d8338f-1dcd-4530-816d-d7a082eb84ab" />
+
 * Analytics Dashboard
+  <img width="1891" height="887" alt="image" src="https://github.com/user-attachments/assets/68d4fdc0-45c1-40d1-a877-10cd14adc292" />
+
 
 ---
 
