@@ -15,8 +15,11 @@ const Submit = lazy(() => import("./pages/Submit"));
 const Track = lazy(() => import("./pages/Track"));
 const MyComplaints = lazy(() => import("./pages/MyComplaints"));
 const Profile = lazy(() => import("./pages/Profile"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { CivicAgentComplaintService } from "./services/complaintService";
 
@@ -37,9 +40,11 @@ export default function App() {
     navigate("/submit");
   };
 
+  const isAdminRoute = location.pathname.startsWith("/admin");
+
   return (
     <AuthProvider>
-      <Header onOpenSettings={() => setSettingsOpen(true)} />
+      {!isAdminRoute && <Header onOpenSettings={() => setSettingsOpen(true)} />}
       
       <main>
         <Suspense fallback={
@@ -68,15 +73,23 @@ export default function App() {
             
             <Route path="/department" element={<Department />} />
             <Route path="/commissioner" element={<Commissioner />} />
+
+            {/* Admin Portal Routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={
+              <AdminProtectedRoute>
+                <AdminDashboard />
+              </AdminProtectedRoute>
+            } />
           </Routes>
         </Suspense>
       </main>
 
-      <Footer onOpenSettings={() => setSettingsOpen(true)} />
+      {!isAdminRoute && <Footer onOpenSettings={() => setSettingsOpen(true)} />}
 
       {/* Global Overlays */}
-      <AuthModal />
-      <AIAssistant />
+      {!isAdminRoute && <AuthModal />}
+      {!isAdminRoute && <AIAssistant />}
 
       {settingsOpen && (
         <SettingsModal onClose={() => setSettingsOpen(false)} />
