@@ -37,107 +37,47 @@ export default function AdminDashboard() {
   const adminSession = JSON.parse(localStorage.getItem("adminSession") || "{}");
   const adminName = adminSession.name || "System Administrator";
 
-  // Real-time Firestore sync & polling fallback
+  // Real-time Firestore sync ONLY
   useEffect(() => {
     let unsubscribe = null;
-    let fallbackInterval = null;
 
     const setupRealtime = () => {
       try {
         if (!db) {
-          throw new Error("Firestore DB is not initialized");
+          console.warn("Firestore DB is not initialized");
+          setLoading(false);
+          return;
         }
-        const q = query(collection(db, "complaints"), orderBy("submittedAt", "desc"));
+        console.log("Firestore connected. Setting up real-time listener...");
+        const q = query(collection(db, "complaints"), orderBy("createdAt", "desc"));
         unsubscribe = onSnapshot(q, (snapshot) => {
           const list = [];
           snapshot.forEach((docSnap) => {
             list.push({ docId: docSnap.id, ...docSnap.data() });
           });
           
-          // Merge with LocalStorage to ensure EVERY complaint is visible in admin dashboard
-          const localList = [];
-          try {
-            const stored = JSON.parse(localStorage.getItem("civicAgentComplaints") || "[]");
-            stored.forEach(c => {
-              if (!list.some(fc => fc.id === c.id)) {
-                localList.push(c);
-              }
-            });
-          } catch (e) {
-            console.error("Failed to read local complaints:", e);
-          }
-
-          const combined = [...list, ...localList].sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
-          setComplaints(combined);
+          console.log(`Number of complaints loaded: ${list.length}`);
+          setComplaints(list);
           setLoading(false);
         }, (error) => {
-          console.warn("Real-time listener failed, using polling fallback:", error);
-          startFallbackPolling();
+          console.error("Real-time listener failed:", error);
+          setLoading(false);
         });
       } catch (err) {
-        console.warn("Failed to set up real-time listener, using polling fallback:", err);
-        startFallbackPolling();
+        console.error("Failed to set up real-time listener:", err);
+        setLoading(false);
       }
-    };
-
-    const startFallbackPolling = () => {
-      setLoading(true);
-      const fetchData = async () => {
-        try {
-          const dbComplaints = [];
-          if (db) {
-            try {
-              const q = query(collection(db, "complaints"), orderBy("submittedAt", "desc"));
-              const snapshot = await getDocs(q);
-              snapshot.forEach((docSnap) => {
-                dbComplaints.push({ docId: docSnap.id, ...docSnap.data() });
-              });
-            } catch (err) {
-              console.warn("Error polling Firestore:", err);
-            }
-          }
-
-          const localList = [];
-          try {
-            const stored = JSON.parse(localStorage.getItem("civicAgentComplaints") || "[]");
-            stored.forEach(c => {
-              if (!dbComplaints.some(fc => fc.id === c.id)) {
-                localList.push(c);
-              }
-            });
-          } catch (e) {
-            console.error("Failed to read local complaints:", e);
-          }
-
-          const combined = [...dbComplaints, ...localList].sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
-          setComplaints(combined);
-        } catch (err) {
-          console.error("Failed to read complaints via service:", err);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchData();
-      fallbackInterval = setInterval(fetchData, 5000);
     };
 
     setupRealtime();
 
     return () => {
-      if (unsubscribe) unsubscribe();
-      if (fallbackInterval) clearInterval(fallbackInterval);
+      if (unsubscribe) {
+        console.log("Unsubscribing from Firestore listener...");
+        unsubscribe();
+      }
     };
   }, []);
-
-  // Auto-seed initial demo complaints if the list is empty and loading completes
-  useEffect(() => {
-    if (!loading && complaints.length === 0) {
-      CivicAgentComplaintService.seedInitialData().catch(err => {
-        console.error("Auto-seeding initial data failed:", err);
-      });
-    }
-  }, [loading, complaints]);
 
   const handleLogout = () => {
     localStorage.removeItem("adminSession");
@@ -153,7 +93,7 @@ export default function AdminDashboard() {
     setActionMessage("");
   };
 
-  // Submit updates to Firestore & Local Storage
+  // Submit updates to Firestore
   const handleUpdateComplaint = async (e) => {
     e.preventDefault();
     if (!selectedComplaint) return;
@@ -167,8 +107,12 @@ export default function AdminDashboard() {
     };
 
     try {
-      const res = await CivicAgentComplaintService.updateComplaint(selectedComplaint.id, updates);
+      if (!selectedComplaint.docId) {
+        throw new Error("Missing document ID.");
+      }
+      const res = await CivicAgentComplaintService.updateComplaint(selectedComplaint.docId, updates);
       if (res) {
+        console.log("Status update success");
         // Close the modal upon successful save
         setSelectedComplaint(null);
         setActionMessage("Grievance updated successfully!");
@@ -177,52 +121,14 @@ export default function AdminDashboard() {
         throw new Error("Update service returned null");
       }
     } catch (err) {
-      console.error("Error updating complaint:", err);
+      console.error("Status update failure:", err);
       setActionMessage("Error: Failed to save changes.");
     } finally {
       setIsUpdating(false);
     }
   };
 
-  // Seeding realistic complaints for hackathon demo
-  const handleSeedDemo = async () => {
-    setIsUpdating(true);
-    try {
-      await CivicAgentComplaintService.seedInitialData();
-      setActionMessage("Demo complaints seeded successfully!");
-      setTimeout(() => setActionMessage(""), 3000);
-    } catch (err) {
-      console.error("Error seeding complaints:", err);
-      setActionMessage("Seeding failed.");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
 
-  // Clearing database contents (for demo reset)
-  const handleResetData = async () => {
-    if (!window.confirm("Are you sure you want to delete all complaints from Firestore/local storage?")) return;
-    setIsUpdating(true);
-    try {
-      // Clear Firestore documents if db is connected
-      if (db) {
-        const querySnapshot = await getDocs(collection(db, "complaints"));
-        for (const docSnap of querySnapshot.docs) {
-          await deleteDoc(doc(db, "complaints", docSnap.id));
-        }
-      }
-      // Clear LocalStorage
-      localStorage.removeItem("civicAgentComplaints");
-      setComplaints([]);
-      setActionMessage("Database wiped clean.");
-      setTimeout(() => setActionMessage(""), 3000);
-    } catch (err) {
-      console.error("Error resetting data:", err);
-      setActionMessage("Reset failed.");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
 
   // -----------------------------------------------------------------
   // DYNAMIC CALCULATIONS & DATA FORMATTING
@@ -231,8 +137,8 @@ export default function AdminDashboard() {
   // Filter complaints
   const filteredComplaints = complaints.filter(c => {
     const matchesSearch = 
-      (c.id || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (c.fullName || c.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.complaintId || c.id || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.citizenName || c.fullName || c.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (c.description || "").toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus = statusFilter === "All" || c.status === statusFilter;
@@ -531,7 +437,8 @@ export default function AdminDashboard() {
                   </div>
                 ) : complaints.length === 0 ? (
                   <div className="admin-empty-state" style={{ textAlign: "center", padding: "40px 0" }}>
-                    <p style={{ color: "var(--muted)", fontSize: "13.5px" }}>No complaints logged in the database yet.</p>
+                    <h4 style={{ color: "#fff", fontSize: "15px", marginBottom: "8px" }}>No complaints available</h4>
+                    <p style={{ color: "var(--muted)", fontSize: "13.5px" }}>Submit a complaint from the citizen portal to see it here.</p>
                   </div>
                 ) : (
                   <div style={{ overflowX: "auto" }}>
@@ -549,9 +456,9 @@ export default function AdminDashboard() {
                         {complaints.slice(0, 5).map(c => {
                           const dept = c.analysis?.primaryDepartment?.label || c.department || "Public Safety";
                           return (
-                            <tr key={c.id} onClick={() => handleOpenDetails(c)} style={{ cursor: "pointer" }}>
-                              <td style={{ fontWeight: "700" }}>{c.id}</td>
-                              <td>{c.fullName || c.name}</td>
+                            <tr key={c.docId || c.id} onClick={() => handleOpenDetails(c)} style={{ cursor: "pointer" }}>
+                              <td style={{ fontWeight: "700" }}>{c.complaintId || c.id}</td>
+                              <td>{c.citizenName || c.fullName || c.name}</td>
                               <td>{dept}</td>
                               <td>
                                 <span className={`badge-status ${(c.analysis?.priority || c.priority || "medium").toLowerCase()}`} style={{ fontSize: "10px", padding: "2px 6px" }}>
@@ -653,6 +560,11 @@ export default function AdminDashboard() {
                 <div style={{ textAlign: "center", padding: "60px 0", color: "var(--muted)" }}>
                   Loading database complaints...
                 </div>
+              ) : complaints.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "60px 0", color: "var(--muted)" }}>
+                  <h4 style={{ color: "#fff", fontSize: "16px", marginBottom: "8px" }}>No complaints available</h4>
+                  <p>Submit a complaint from the citizen portal to see it here.</p>
+                </div>
               ) : filteredComplaints.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "60px 0", color: "var(--muted)" }}>
                   No complaints match your filters.
@@ -674,13 +586,13 @@ export default function AdminDashboard() {
                     <tbody>
                       {filteredComplaints.map(c => {
                         const dept = c.analysis?.primaryDepartment?.label || c.department || "Public Safety";
-                        const dateFormatted = c.submittedAt 
-                          ? new Date(c.submittedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+                        const dateFormatted = (c.createdAt || c.submittedAt)
+                          ? new Date(c.createdAt || c.submittedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })
                           : "N/A";
                         return (
-                          <tr key={c.id}>
-                            <td style={{ fontWeight: "800" }}>{c.id}</td>
-                            <td>{c.fullName || c.name}</td>
+                          <tr key={c.docId || c.id}>
+                            <td style={{ fontWeight: "800" }}>{c.complaintId || c.id}</td>
+                            <td>{c.citizenName || c.fullName || c.name}</td>
                             <td>{dept}</td>
                             <td>
                               <span className={`badge-status ${(c.analysis?.priority || c.priority || "medium").toLowerCase()}`}>
@@ -845,32 +757,10 @@ export default function AdminDashboard() {
         {activeTab === "settings" && (
           <div className="admin-settings-tab">
             <div className="glass-card" style={{ padding: "28px", maxWidth: "600px" }}>
-              <h3 style={{ fontSize: "18px", fontWeight: "800", color: "#fff", marginBottom: "12px" }}>Hackathon Simulation Controls</h3>
+              <h3 style={{ fontSize: "18px", fontWeight: "800", color: "#fff", marginBottom: "12px" }}>System Settings</h3>
               <p style={{ color: "var(--muted)", fontSize: "14px", marginBottom: "24px" }}>
-                Use these developer utilities to seed dummy citizen data or clear database records to demonstrate end-to-end routing updates during inspections.
+                Firestore Real-Time Database connection is active. All fallback and demo systems have been disabled to ensure 100% data integrity.
               </p>
-
-              <div style={{ display: "grid", gap: "16px" }}>
-                <div style={{ background: "rgba(0,0,0,0.08)", padding: "20px", borderRadius: "12px", border: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div>
-                    <h4 style={{ fontSize: "14.5px", fontWeight: "700", color: "#fff" }}>Seed Initial Demo Complaints</h4>
-                    <p style={{ fontSize: "12px", color: "var(--muted)", marginTop: "4px" }}>Generates realistic complaints across different departments.</p>
-                  </div>
-                  <button className="button primary" onClick={handleSeedDemo} disabled={isUpdating} style={{ height: "38px", padding: "0 18px", fontSize: "12.5px" }}>
-                    Seed Data
-                  </button>
-                </div>
-
-                <div style={{ background: "rgba(239, 68, 68, 0.03)", padding: "20px", borderRadius: "12px", border: "1px solid rgba(239, 68, 68, 0.15)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div>
-                    <h4 style={{ fontSize: "14.5px", fontWeight: "700", color: "var(--red)" }}>Reset Database Contents</h4>
-                    <p style={{ fontSize: "12px", color: "var(--muted)", marginTop: "4px" }}>Deletes all complaints in Firestore and local storage.</p>
-                  </div>
-                  <button className="button secondary" onClick={handleResetData} disabled={isUpdating} style={{ height: "38px", padding: "0 18px", fontSize: "12.5px", borderColor: "rgba(239,68,68,0.2)", color: "var(--red)" }}>
-                    Wipe Database
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         )}
@@ -885,7 +775,7 @@ export default function AdminDashboard() {
             {/* Modal Header */}
             <div className="admin-modal-header-row">
               <div>
-                <h3>Grievance {selectedComplaint.id}</h3>
+                <h3>Grievance {selectedComplaint.complaintId || selectedComplaint.id}</h3>
                 <span className={`badge-status ${(selectedComplaint.status || "Assigned").toLowerCase().replace(" ", "-")}`}>
                   {selectedComplaint.status}
                 </span>
@@ -902,7 +792,7 @@ export default function AdminDashboard() {
               <div className="admin-details-grid">
                 <div className="detail-item">
                   <label><User /> Citizen Name</label>
-                  <span>{selectedComplaint.fullName || selectedComplaint.name || "Anonymous"}</span>
+                  <span>{selectedComplaint.citizenName || selectedComplaint.fullName || selectedComplaint.name || "Anonymous"}</span>
                 </div>
                 <div className="detail-item">
                   <label><Phone /> Mobile Number</label>

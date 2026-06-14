@@ -1,147 +1,82 @@
 import { CivicAgentFirebase } from "./firebaseConfig";
 import { CivicAgentRoutingEngine } from "./routingEngine";
-import { collection, addDoc, getDocs, doc, getDoc, updateDoc, setDoc, query, orderBy } from "firebase/firestore";
-
-const localStorageKey = "civicAgentComplaints";
-
-// Local storage helpers
-function getLocalComplaints() {
-  try {
-    return JSON.parse(localStorage.getItem(localStorageKey) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveLocalComplaints(complaints) {
-  localStorage.setItem(localStorageKey, JSON.stringify(complaints));
-}
+import { collection, addDoc, getDocs, doc, getDoc, updateDoc, query, orderBy } from "firebase/firestore";
 
 // Generate the next complaint ID
 async function nextComplaintId() {
   const complaints = await readComplaints();
   const year = new Date().getFullYear();
-  const count = complaints.filter((c) => c.id && c.id.includes(`CMP-${year}`)).length + 1;
+  const count = complaints.filter((c) => c.complaintId && c.complaintId.includes(`CMP-${year}`)).length + 1;
   return `CMP-${year}-${String(count).padStart(3, "0")}`;
 }
 
-// Create linked sub-tickets for multi-department routing
-function createLinkedRecords(baseId, analysis) {
-  if (!analysis.isMultiDepartment) return [];
-  return analysis.departments.map((dept, index) => ({
-    id: `${baseId}-${String.fromCharCode(65 + index)}`,
-    department: dept.label,
-    name: dept.name,
-    status: index === 0 ? "Assigned" : "Linked",
-    timelineStatus: 1
-  }));
-}
-
-// Read all complaints
+// Read all complaints (fallback for non-realtime places, though dashboard uses onSnapshot)
 async function readComplaints() {
   const db = CivicAgentFirebase.db;
-  if (CivicAgentFirebase.isConfigured() && db) {
-    try {
-      const q = query(collection(db, "complaints"), orderBy("submittedAt", "desc"));
-      const snapshot = await getDocs(q);
-      const list = [];
-      snapshot.forEach((docSnap) => {
-        list.push({ docId: docSnap.id, ...docSnap.data() });
-      });
-      if (list.length > 0) return list;
-    } catch (err) {
-      console.error("Firestore read error, using localStorage fallback:", err);
-    }
+  if (!CivicAgentFirebase.isConfigured() || !db) return [];
+  try {
+    const q = query(collection(db, "complaints"), orderBy("createdAt", "desc"));
+    const snapshot = await getDocs(q);
+    const list = [];
+    snapshot.forEach((docSnap) => {
+      list.push({ docId: docSnap.id, ...docSnap.data() });
+    });
+    return list;
+  } catch (err) {
+    console.error("Firestore read error:", err);
+    return [];
   }
-  
-  // Fallback to local storage (sorted by submittedAt desc)
-  return getLocalComplaints().sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
 }
 
 // Submit a new complaint
 async function submitComplaint(payload) {
   const id = await nextComplaintId();
   const analysis = await CivicAgentRoutingEngine.analyzeComplaint(payload);
-  const now = new Date();
+  const now = new Date().toISOString();
   
   const complaint = {
-    id,
-    fullName: payload.fullName,
-    mobile: payload.mobile,
+    complaintId: id,
+    uid: payload.userId || null,
+    citizenName: payload.fullName,
     email: payload.email || "",
-    location: payload.location,
+    mobile: payload.mobile,
+    department: analysis.primaryDepartment?.label || "",
     category: payload.category || "Auto-detect",
     description: payload.description,
-    language: payload.language || "English",
-    imageName: payload.imageName || "",
-    imageUrl: payload.imageUrl || "", // URL or local object URL
-    submittedAt: now.toISOString(),
+    location: payload.location,
+    priority: analysis.priority || "",
     status: "Submitted",
     remarks: "",
-    timelineStatus: 0,
-    analysis,
-    linkedRecords: createLinkedRecords(id, analysis),
+    aiConfidence: Number(analysis.confidence) || 96,
+    createdAt: now,
+    updatedAt: now,
     history: [
-      { status: "Submitted", timestamp: now.toISOString() }
-    ],
-
-    // Target Document Structure properties:
-    complaintId: id,
-    userId: payload.userId || null,
-    name: payload.fullName,
-    department: analysis.primaryDepartment?.label || "",
-    priority: analysis.priority || "",
-    eta: analysis.eta || "",
-    confidence: Number(analysis.confidence) || 96,
-    summary: analysis.summary || "",
-    reasoning: typeof analysis.reasoning === 'object'
-      ? `Routing: ${analysis.reasoning?.routing || ""}; Priority: ${analysis.reasoning?.priority || ""}; ETA: ${analysis.reasoning?.eta || ""}`
-      : String(analysis.reasoning || ""),
-    createdAt: now.toISOString(),
-    updatedAt: now.toISOString()
+      { status: "Submitted", timestamp: now }
+    ]
   };
-
-  // Assign officer name based on department
-  const officerNames = {
-    "Electrical": "Officer R. Srinivas",
-    "Water Supply": "Officer K. Ramana",
-    "Sanitation": "Officer M. Suresh",
-    "Roads & Infrastructure": "Officer G. Venkat",
-    "Drainage": "Officer P. Raju",
-    "Public Safety": "Officer T. Satish"
-  };
-  complaint.assignedOfficer = officerNames[analysis.primaryDepartment?.name] || "Officer In-Charge";
 
   const db = CivicAgentFirebase.db;
-  if (CivicAgentFirebase.isConfigured() && db) {
+  if (!CivicAgentFirebase.isConfigured() || !db) {
+      throw new Error("Firestore is not configured. Cannot save complaint.");
+  }
+
+  const docRef = await addDoc(collection(db, "complaints"), complaint);
+  complaint.docId = docRef.id;
+
+  // If submitted by authenticated user, increment their totalComplaints count in Firestore
+  if (complaint.uid) {
     try {
-      const docRef = await addDoc(collection(db, "complaints"), complaint);
-      complaint.docId = docRef.id;
-
-      // If submitted by authenticated user, increment their totalComplaints count in Firestore
-      if (complaint.userId) {
-        try {
-          const userDocRef = doc(db, "users", complaint.userId);
-          const userSnap = await getDoc(userDocRef);
-          if (userSnap.exists()) {
-            const currentTotal = userSnap.data().totalComplaints || 0;
-            await updateDoc(userDocRef, { totalComplaints: currentTotal + 1 });
-          }
-        } catch (err) {
-          console.error("Error incrementing user complaint count:", err);
-        }
+      const userDocRef = doc(db, "users", complaint.uid);
+      const userSnap = await getDoc(userDocRef);
+      if (userSnap.exists()) {
+        const currentTotal = userSnap.data().totalComplaints || 0;
+        await updateDoc(userDocRef, { totalComplaints: currentTotal + 1 });
       }
-
-      return complaint;
     } catch (err) {
-      console.error("Firestore save error, saving locally:", err);
+      console.error("Error incrementing user complaint count:", err);
     }
   }
 
-  // Save to LocalStorage
-  const localList = getLocalComplaints();
-  localList.unshift(complaint);
-  saveLocalComplaints(localList);
   return complaint;
 }
 
@@ -149,16 +84,21 @@ async function submitComplaint(payload) {
 async function getComplaint(id) {
   const list = await readComplaints();
   const normalized = String(id || "").trim().toUpperCase();
-  return list.find((c) => c.id.toUpperCase() === normalized) || null;
+  return list.find((c) => (c.complaintId || "").toUpperCase() === normalized) || null;
 }
 
 // Update complaint status/remarks
-async function updateComplaint(id, updates) {
-  const list = await readComplaints();
-  const index = list.findIndex((c) => c.id === id);
-  if (index === -1) return null;
-
-  const current = list[index];
+async function updateComplaint(docId, updates) {
+  const db = CivicAgentFirebase.db;
+  if (!CivicAgentFirebase.isConfigured() || !db || !docId) {
+      throw new Error("Invalid update request or Firestore not configured.");
+  }
+  
+  const docRef = doc(db, "complaints", docId);
+  const currentSnap = await getDoc(docRef);
+  
+  if (!currentSnap.exists()) return null;
+  const current = currentSnap.data();
   const now = new Date().toISOString();
 
   const historyUpdates = [];
@@ -167,7 +107,6 @@ async function updateComplaint(id, updates) {
   }
 
   const updated = {
-    ...current,
     ...updates,
     updatedAt: now,
     history: [
@@ -175,150 +114,23 @@ async function updateComplaint(id, updates) {
       ...historyUpdates
     ]
   };
-  delete updated.historyItem; // Clean up temp key if passed
 
-  const db = CivicAgentFirebase.db;
-  if (CivicAgentFirebase.isConfigured() && db && current.docId) {
+  await updateDoc(docRef, updated);
+
+  if (updates.status === "Resolved" && current.status !== "Resolved" && current.uid) {
     try {
-      const docRef = doc(db, "complaints", current.docId);
-      await updateDoc(docRef, updated);
-
-      if (updates.status === "Resolved" && current.status !== "Resolved" && current.userId) {
-        try {
-          const userDocRef = doc(db, "users", current.userId);
-          const userSnap = await getDoc(userDocRef);
-          if (userSnap.exists()) {
-            const currentResolved = userSnap.data().resolvedComplaints || 0;
-            await updateDoc(userDocRef, { resolvedComplaints: currentResolved + 1 });
-          }
-        } catch (err) {
-          console.error("Error incrementing user resolved count:", err);
-        }
+      const userDocRef = doc(db, "users", current.uid);
+      const userSnap = await getDoc(userDocRef);
+      if (userSnap.exists()) {
+        const currentResolved = userSnap.data().resolvedComplaints || 0;
+        await updateDoc(userDocRef, { resolvedComplaints: currentResolved + 1 });
       }
-
-      return updated;
     } catch (err) {
-      console.error("Firestore update error, updating locally:", err);
+      console.error("Error incrementing user resolved count:", err);
     }
   }
 
-  // Local storage update
-  const localList = getLocalComplaints();
-  const localIndex = localList.findIndex((c) => c.id === id);
-  if (localIndex !== -1) {
-    localList[localIndex] = updated;
-    saveLocalComplaints(localList);
-  }
-  return updated;
-}
-
-// Seed realistic demo complaints if empty
-async function seedInitialData() {
-  const currentList = await readComplaints();
-  if (currentList.length > 0) return;
-
-  console.log("Seeding initial demo data...");
-  const sampleComplaints = [
-    {
-      fullName: "Anand Verma",
-      mobile: "9123456789",
-      email: "anand@gmail.com",
-      location: "Gachibowli, Hyderabad",
-      category: "Streetlight Issues",
-      description: "Three streetlights near Oakridge School are flickering and completely dark. Children walking back from evening classes face safety risks.",
-      language: "English",
-      submittedAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString() // 5 days ago
-    },
-    {
-      fullName: "Kalyani Devi",
-      mobile: "9848022338",
-      email: "kalyani@yahoo.com",
-      location: "Jubilee Hills, Road No 36, Hyderabad",
-      category: "Water Leakage",
-      description: "A major water leakage from the main pipeline is flooding the road and damaged a patch of infrastructure. Stagnant water is accumulating.",
-      language: "English",
-      submittedAt: new Date(Date.now() - 3600000 * 24 * 3).toISOString() // 3 days ago
-    },
-    {
-      fullName: "Satish Kumar",
-      mobile: "7013824419",
-      email: "satish@outlook.com",
-      location: "Madhapur, Hyderabad",
-      category: "Garbage Collection",
-      description: "Garbage collection truck has not visited our street for 6 days. The dump yard is overflowing and causing a terrible smell in the area.",
-      language: "English",
-      submittedAt: new Date(Date.now() - 3600000 * 12).toISOString() // 12 hours ago
-    },
-    {
-      fullName: "Ramesh Reddy",
-      mobile: "8123456780",
-      email: "ramesh@outlook.com",
-      location: "Kukatpally, Metro Station Area, Hyderabad",
-      category: "Road Damage",
-      description: "Huge pothole formed on the main road just near the metro station staircase. It's causing massive traffic jams and two-wheelers are skidding.",
-      language: "English",
-      submittedAt: new Date(Date.now() - 3600000 * 4).toISOString() // 4 hours ago
-    }
-  ];
-
-  for (const sample of sampleComplaints) {
-    await submitComplaint(sample);
-  }
-
-  // Let's modify some of these newly seeded complaints to be In Progress or Resolved
-  const updatedList = await readComplaints();
-  
-  // Resolve the streetlight issue
-  const streetlightIssue = updatedList.find(c => c.category === "Streetlight Issues");
-  if (streetlightIssue) {
-    await updateComplaint(streetlightIssue.id, {
-      status: "Resolved",
-      timelineStatus: 6,
-      remarks: "Streetlight LED bulb replaced and wiring repaired. Night safety restored.",
-      "analysis": {
-        ...streetlightIssue.analysis,
-        officerNotes: "Grievance resolved. LED fixtures replaced by Electrical Team 4."
-      }
-    });
-  }
-
-  // Move the water leakage to "In Progress"
-  const waterLeakage = updatedList.find(c => c.category === "Water Leakage");
-  if (waterLeakage) {
-    await updateComplaint(waterLeakage.id, {
-      status: "In Progress",
-      timelineStatus: 5,
-      remarks: "Water supply team is on-site repairing pipeline leak. Road restoration requested.",
-      "analysis": {
-        ...waterLeakage.analysis,
-        officerNotes: "Excavation and valve replacements underway. ETA for water supply restoration is 6 hours."
-      }
-    });
-  }
-
-  // Move the garbage collection to "Officer Assigned"
-  const garbage = updatedList.find(c => c.category === "Garbage Collection");
-  if (garbage) {
-    await updateComplaint(garbage.id, {
-      status: "Officer Assigned",
-      timelineStatus: 3,
-      remarks: "Field Inspector M. Suresh assigned to verify garbage pickup delay."
-    });
-  }
-}
-
-// Seed demo flow complaint on demand
-async function seedDemoComplaint() {
-  return submitComplaint({
-    fullName: "Asha Reddy",
-    mobile: "9876543210",
-    email: "asha@example.com",
-    location: "Jubilee Hills, Hyderabad",
-    category: "Water Leakage",
-    description: "Water leakage damaged road and caused flooding near the main junction.",
-    language: "English",
-    imageName: "demo-road-leakage.jpg"
-  });
+  return { ...current, ...updated, docId };
 }
 
 // Check for possible duplicate complaints at similar locations with overlapping descriptions
@@ -344,7 +156,5 @@ export const CivicAgentComplaintService = {
   submitComplaint,
   getComplaint,
   updateComplaint,
-  seedInitialData,
-  seedDemoComplaint,
   checkDuplicate
 };
