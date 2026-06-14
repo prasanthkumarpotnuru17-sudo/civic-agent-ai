@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, query, where, serverTimestamp } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
@@ -13,8 +13,8 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase only once
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
@@ -29,15 +29,17 @@ const usersCol = collection(db, "users");
 // 1. Get user profile from Firestore
 export async function getUserProfile(uid) {
   try {
+    console.log("Fetching profile...");
     const userDocRef = doc(db, "users", uid);
     const userSnap = await getDoc(userDocRef);
     if (userSnap.exists()) {
+      console.log("Profile found");
       return userSnap.data();
     }
     return null;
   } catch (error) {
-    console.error("Error fetching user profile:", error);
-    throw error;
+    console.error("Profile fetch failed:", error);
+    return null;
   }
 }
 
@@ -86,22 +88,25 @@ export async function loginWithGoogle() {
     const provider = new GoogleAuthProvider();
     const userCredential = await signInWithPopup(auth, provider);
     const user = userCredential.user;
+    console.log("User authenticated");
     
     // Check if profile exists in Firestore, if not seed it
     let profile = await getUserProfile(user.uid);
     if (!profile) {
       profile = {
         uid: user.uid,
+        displayName: user.displayName || "",
         email: user.email,
-        name: user.displayName || "",
-        mobile: "",
-        defaultLocation: "",
-        preferredLanguage: "English",
         role: "citizen",
-        totalComplaints: 0,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
-      await setDoc(doc(db, "users", user.uid), profile);
+      try {
+        await setDoc(doc(db, "users", user.uid), profile);
+        console.log("Profile created");
+      } catch (err) {
+        console.error("Error creating profile:", err);
+      }
     }
     return { user, profile };
   } catch (error) {
