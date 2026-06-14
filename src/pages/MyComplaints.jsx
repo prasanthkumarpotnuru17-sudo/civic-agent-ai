@@ -11,6 +11,7 @@ export default function MyComplaints() {
   const navigate = useNavigate();
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [indexError, setIndexError] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -36,7 +37,13 @@ export default function MyComplaints() {
         setComplaints(list);
       }
     } catch (err) {
-      console.error("Error loading citizen complaints history:", err);
+      if (err.message && err.message.includes("requires an index")) {
+        console.error("Index missing for query: collection('complaints').where('uid', '==', '" + user?.uid + "').orderBy('createdAt', 'desc').limit(100)");
+        console.error("Firebase instructions: " + err.message);
+        setIndexError(true);
+      } else {
+        console.error("Error loading citizen complaints history:", err);
+      }
     } finally {
       setLoading(false);
     }
@@ -60,6 +67,16 @@ export default function MyComplaints() {
             <div style={{ animation: "flowPulse 1.2s infinite", color: "var(--muted)", fontWeight: "600" }}>
               Loading grievances history...
             </div>
+          </div>
+        ) : indexError ? (
+          <div className="glass-card" style={{ padding: "48px", textAlign: "center", border: "1px solid rgba(255, 100, 100, 0.2)" }}>
+            <div className="feature-icon-wrapper" style={{ margin: "0 auto 16px", background: "rgba(255, 50, 50, 0.1)" }}>
+              <ShieldAlert style={{ width: "24px", height: "24px", color: "#ff6b6b" }} />
+            </div>
+            <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#fff", marginBottom: "8px" }}>Database Index Building</h3>
+            <p style={{ color: "var(--muted)", fontSize: "14px", maxWidth: "400px", margin: "0 auto 20px" }}>
+              We are currently optimizing the database to load your complaint history faster. Please check back in a few minutes.
+            </p>
           </div>
         ) : complaints.length === 0 ? (
           <div className="glass-card" style={{ padding: "48px", textAlign: "center" }}>
