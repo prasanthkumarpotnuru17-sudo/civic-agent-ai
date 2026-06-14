@@ -193,18 +193,18 @@ export default function AdminDashboard() {
   const statusCounts = { "Pending": pendingCount, "In Progress": inProgressCount, "Resolved": resolvedCount };
   const statusChartData = Object.entries(statusCounts).map(([name, count]) => ({ name, value: count }));
 
-  // Colors for Pie Charts
+  // Colors for Pie Charts (Premium Vibrant Palette)
   const PRIORITY_COLORS = {
-    "Critical": "#ef4444", // red
-    "High": "#f59e0b", // orange
-    "Medium": "#3b82f6", // blue
-    "Low": "#64748b"  // gray
+    "Critical": "#ff0055", // Neon Red/Pink
+    "High": "#ffaa00", // Neon Orange
+    "Medium": "#00e5ff", // Cyan
+    "Low": "#94a3b8"  // Slate Gray
   };
 
   const STATUS_COLORS = {
-    "Pending": "#f59e0b",
-    "In Progress": "#3b82f6",
-    "Resolved": "#10b981"
+    "Pending": "#ffbb00", // Gold
+    "In Progress": "#aa00ff", // Neon Purple
+    "Resolved": "#00ffcc"  // Mint Green
   };
 
   // AI Insights
@@ -682,7 +682,7 @@ export default function AdminDashboard() {
                         <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
                         <YAxis stroke="#64748b" fontSize={11} tickLine={false} />
                         <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", color: "#fff" }} />
-                        <Bar dataKey="complaints" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="complaints" fill="#aa00ff" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
