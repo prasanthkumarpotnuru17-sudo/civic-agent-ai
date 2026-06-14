@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Search, MapPin, Layers, ShieldAlert, Clock, User, CheckCircle2, AlertCircle } from "lucide-react";
 import { CivicAgentComplaintService } from "../services/complaintService";
-import { onSnapshot, collection, query, where } from "firebase/firestore";
+import { onSnapshot, collection, query, where, limit } from "firebase/firestore";
 import { db } from "../services/firebase";
 
 export default function Track() {
@@ -50,7 +50,7 @@ export default function Track() {
 
     if (db) {
       try {
-        const q = query(collection(db, "complaints"), where("id", "==", normalized));
+        const q = query(collection(db, "complaints"), where("complaintId", "==", normalized), limit(1));
         unsubscribe = onSnapshot(q, (snapshot) => {
           if (!snapshot.empty) {
             setTrackResult({ docId: snapshot.docs[0].id, ...snapshot.docs[0].data() });

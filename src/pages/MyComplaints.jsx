@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { FileText, Inbox, ExternalLink, Calendar, Layers, ShieldAlert } from "lucide-react";
 import useAuth from "../hooks/useAuth";
 import { CivicAgentComplaintService } from "../services/complaintService";
+import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
+import { db } from "../services/firebase";
 
 export default function MyComplaints() {
   const { user } = useAuth();
@@ -19,9 +21,20 @@ export default function MyComplaints() {
   const fetchUserComplaints = async () => {
     setLoading(true);
     try {
-      const allComplaints = await CivicAgentComplaintService.readComplaints();
-      const filtered = allComplaints.filter(c => c.userId === user.uid);
-      setComplaints(filtered);
+      if (db && user?.uid) {
+        const q = query(
+          collection(db, "complaints"), 
+          where("uid", "==", user.uid), 
+          orderBy("createdAt", "desc"), 
+          limit(100)
+        );
+        const snapshot = await getDocs(q);
+        const list = [];
+        snapshot.forEach((docSnap) => {
+          list.push({ docId: docSnap.id, ...docSnap.data() });
+        });
+        setComplaints(list);
+      }
     } catch (err) {
       console.error("Error loading citizen complaints history:", err);
     } finally {

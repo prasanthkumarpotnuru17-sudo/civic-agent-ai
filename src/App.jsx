@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, Suspense, lazy } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 
 import Header from "./components/Header";
@@ -8,14 +8,15 @@ import AuthModal from "./components/AuthModal";
 import AIAssistant from "./components/AIAssistant";
 
 import Home from "./pages/Home";
-import Submit from "./pages/Submit";
-import Track from "./pages/Track";
-import MyComplaints from "./pages/MyComplaints";
-import Profile from "./pages/Profile";
 import Department from "./pages/Department";
 import Commissioner from "./pages/Commissioner";
-import AdminLogin from "./pages/AdminLogin";
-import AdminDashboard from "./pages/AdminDashboard";
+
+const Submit = lazy(() => import("./pages/Submit"));
+const Track = lazy(() => import("./pages/Track"));
+const MyComplaints = lazy(() => import("./pages/MyComplaints"));
+const Profile = lazy(() => import("./pages/Profile"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
@@ -46,34 +47,42 @@ export default function App() {
       {!isAdminRoute && <Header onOpenSettings={() => setSettingsOpen(true)} />}
       
       <main>
-        <Routes>
-          <Route path="/" element={<Home onRunDemo={handleDemoFlow} />} />
-          <Route path="/submit" element={<Submit latestSubmission={latestSubmission} onSubmissionSuccess={handleSubmissionSuccess} />} />
-          <Route path="/track" element={<Track />} />
-          
-          <Route path="/my-complaints" element={
-            <ProtectedRoute>
-              <MyComplaints />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/profile" element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/department" element={<Department />} />
-          <Route path="/commissioner" element={<Commissioner />} />
+        <Suspense fallback={
+          <div style={{ minHeight: "60vh", display: "grid", placeItems: "center" }}>
+            <div style={{ animation: "flowPulse 1.2s infinite", color: "var(--muted)", fontWeight: "600" }}>
+              Loading Module...
+            </div>
+          </div>
+        }>
+          <Routes>
+            <Route path="/" element={<Home onRunDemo={handleDemoFlow} />} />
+            <Route path="/submit" element={<Submit latestSubmission={latestSubmission} onSubmissionSuccess={handleSubmissionSuccess} />} />
+            <Route path="/track" element={<Track />} />
+            
+            <Route path="/my-complaints" element={
+              <ProtectedRoute>
+                <MyComplaints />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/department" element={<Department />} />
+            <Route path="/commissioner" element={<Commissioner />} />
 
-          {/* Admin Portal Routes */}
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/dashboard" element={
-            <AdminProtectedRoute>
-              <AdminDashboard />
-            </AdminProtectedRoute>
-          } />
-        </Routes>
+            {/* Admin Portal Routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={
+              <AdminProtectedRoute>
+                <AdminDashboard />
+              </AdminProtectedRoute>
+            } />
+          </Routes>
+        </Suspense>
       </main>
 
       {!isAdminRoute && <Footer onOpenSettings={() => setSettingsOpen(true)} />}

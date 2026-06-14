@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
@@ -23,7 +23,7 @@ const isConfigured = () => {
 
 if (isConfigured()) {
   try {
-    app = initializeApp(config);
+    app = getApps().length === 0 ? initializeApp(config) : getApp();
     db = getFirestore(app);
     auth = getAuth(app);
     storage = getStorage(app);

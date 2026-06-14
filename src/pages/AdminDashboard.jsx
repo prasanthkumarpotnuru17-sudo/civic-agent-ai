@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { onSnapshot, collection, query, orderBy, getDocs, doc, deleteDoc } from "firebase/firestore";
+import { onSnapshot, collection, query, orderBy, getDocs, doc, deleteDoc, limit } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { CivicAgentComplaintService } from "../services/complaintService";
 import { 
@@ -49,7 +49,7 @@ export default function AdminDashboard() {
           return;
         }
         console.log("Firestore connected. Setting up real-time listener...");
-        const q = query(collection(db, "complaints"), orderBy("createdAt", "desc"));
+        const q = query(collection(db, "complaints"), orderBy("createdAt", "desc"), limit(100));
         unsubscribe = onSnapshot(q, (snapshot) => {
           const list = [];
           snapshot.forEach((docSnap) => {
