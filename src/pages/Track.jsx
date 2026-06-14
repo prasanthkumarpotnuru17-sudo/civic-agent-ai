@@ -110,42 +110,49 @@ export default function Track() {
               </div>
             ) : trackResult ? (
               <div className="timeline" id="timeline">
-                {[
-                  "Submitted",
-                  "Assigned",
-                  "Officer Assigned",
-                  "In Progress",
-                  "Resolved"
-                ].map((step, idx) => {
-                  const historyEvent = trackResult.history?.find(h => h.status === step);
-                  const isDone = !!historyEvent;
-                  const isActive = trackResult.status === step;
-                  
-                  const stepNotes = [
-                    "Complaint received and logged in database.",
-                    "Grievance routed to appropriate department.",
-                    "Field officer assigned to the grievance.",
-                    "Field operations and structural work underway.",
-                    "Grievance resolved. Resolution verified and ticket closed."
+                {(() => {
+                  const statusOrder = [
+                    "Submitted",
+                    "Assigned",
+                    "Officer Assigned",
+                    "In Progress",
+                    "Resolved"
                   ];
+                  const currentIndex = statusOrder.indexOf(trackResult.status) >= 0 ? statusOrder.indexOf(trackResult.status) : 0;
 
-                  return (
-                    <div key={step} className={`timeline-step ${isDone ? "done" : ""} ${isActive ? "active" : ""}`}>
-                      <span className="timeline-dot">
-                        {isDone ? "✓" : idx + 1}
-                      </span>
-                      <div>
-                        <strong>{step}</strong>
-                        <p>{stepNotes[idx]}</p>
-                        {historyEvent && (
-                          <small style={{ color: "var(--blue)", fontSize: "11px", display: "block", marginTop: "4px", fontWeight: "600" }}>
-                            {new Date(historyEvent.timestamp).toLocaleString()}
-                          </small>
-                        )}
+                  return statusOrder.map((step, idx) => {
+                    const historyEvent = trackResult.history?.find(h => h.status === step);
+                    
+                    // A stage is "done" if its index is <= the current status index (it gets a checkmark in the user's requested diagram)
+                    const isDone = idx <= currentIndex;
+                    // It is "active" if it is exactly the current index
+                    const isActive = idx === currentIndex;
+                    
+                    const stepNotes = [
+                      "Complaint received and logged in database.",
+                      "Grievance routed to appropriate department.",
+                      "Field officer assigned to the grievance.",
+                      "Field operations and structural work underway.",
+                      "Grievance resolved. Resolution verified and ticket closed."
+                    ];
+
+                    return (
+                      <div key={step} className={`timeline-step ${isDone ? "done" : ""} ${isActive ? "active" : ""}`}>
+                        <span className="timeline-dot">
+                          {isDone ? "✓" : idx + 1}
+                        </span>
+                        <div>
+                          <strong>{step}</strong>
+                          <p>{stepNotes[idx]}</p>
+                          {isDone && historyEvent && (
+                            <small style={{ color: "var(--blue)", fontSize: "11px", display: "block", marginTop: "4px", fontWeight: "600" }}>
+                              {new Date(historyEvent.timestamp).toLocaleString()}
+                            </small>
+                          )}
                       </div>
                     </div>
                   );
-                })}
+                })})()}
               </div>
             ) : trackSearched ? (
               <div className="analysis-empty" style={{ borderColor: "var(--red-soft)", color: "var(--red)" }}>
