@@ -56,7 +56,9 @@ export default function AdminDashboard() {
             list.push({ docId: docSnap.id, ...docSnap.data() });
           });
           
-          console.log(`Number of complaints loaded: ${list.length}`);
+          console.log("Analytics Connected To Firestore");
+          console.log(`Complaints Loaded: ${list.length}`);
+          console.log("Analytics Updated Successfully");
           setComplaints(list);
           setLoading(false);
         }, (error) => {
@@ -159,8 +161,8 @@ export default function AdminDashboard() {
   // Calculate average AI accuracy
   const validConfidences = complaints.map(c => Number(c.confidence || c.analysis?.confidence || 0)).filter(c => c > 0);
   const avgAccuracy = validConfidences.length > 0 
-    ? (validConfidences.reduce((sum, val) => sum + val, 0) / validConfidences.length).toFixed(1)
-    : "96.2";
+    ? (validConfidences.reduce((sum, val) => sum + val, 0) / validConfidences.length).toFixed(1) + "%"
+    : "Insufficient data";
 
   // Recharts: Complaints by Department
   const deptCounts = {};
@@ -237,6 +239,43 @@ export default function AdminDashboard() {
     });
     return maxArea;
   };
+
+  // Calculate average SLA
+  const resolvedComplaints = complaints.filter(c => c.status === "Resolved" && c.createdAt && c.updatedAt);
+  let averageSla = "No resolved complaints yet";
+  if (resolvedComplaints.length > 0) {
+    let totalMs = 0;
+    resolvedComplaints.forEach(c => {
+      const start = new Date(c.createdAt).getTime();
+      const end = new Date(c.updatedAt).getTime();
+      if (!isNaN(start) && !isNaN(end) && end >= start) {
+        totalMs += (end - start);
+      }
+    });
+    if (totalMs > 0) {
+      const avgMs = totalMs / resolvedComplaints.length;
+      const hours = (avgMs / (1000 * 60 * 60)).toFixed(1);
+      averageSla = `${hours} Hours`;
+    }
+  }
+
+  // Generate dynamic recommendations
+  const recommendations = [];
+  if (complaints.length > 0) {
+    const criticalCount = complaints.filter(c => c.priority === "Critical" || c.analysis?.priority === "Critical").length;
+    if ((criticalCount / complaints.length) > 0.2) {
+      recommendations.push("Critical complaint ratio exceeds threshold. Consider prioritizing field dispatches.");
+    }
+    const waterSupplyCount = complaints.filter(c => (c.analysis?.primaryDepartment?.label || c.department) === "Water Supply").length;
+    if ((waterSupplyCount / complaints.length) > 0.3) {
+      recommendations.push("Water Supply department experiencing increased complaint volume.");
+    }
+    if (recommendations.length === 0) {
+      recommendations.push("Complaint volumes are operating within normal parameters. Routing accuracy is optimal.");
+    }
+  } else {
+    recommendations.push("No complaint data available to generate recommendations.");
+  }
 
   // Unique departments for filter dropdown
   const uniqueDepts = Array.from(new Set(complaints.map(c => c.analysis?.primaryDepartment?.label || c.department || "Public Safety").filter(Boolean)));
@@ -635,7 +674,7 @@ export default function AdminDashboard() {
               <div className="glass-card" style={{ padding: "24px", minHeight: "360px" }}>
                 <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#fff", marginBottom: "20px" }}>Grievances by Municipal Sector</h4>
                 {complaints.length === 0 ? (
-                  <div style={{ display: "grid", placeItems: "center", height: "260px", color: "var(--muted)" }}>No telemetry data available.</div>
+                  <div style={{ display: "grid", placeItems: "center", height: "260px", color: "var(--muted)" }}>No complaint data available.</div>
                 ) : (
                   <div style={{ width: "100%", height: "260px" }}>
                     <ResponsiveContainer width="100%" height="100%">
@@ -654,7 +693,7 @@ export default function AdminDashboard() {
               <div className="glass-card" style={{ padding: "24px", minHeight: "360px" }}>
                 <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#fff", marginBottom: "20px" }}>Severity Distribution</h4>
                 {complaints.length === 0 ? (
-                  <div style={{ display: "grid", placeItems: "center", height: "260px", color: "var(--muted)" }}>No telemetry data available.</div>
+                  <div style={{ display: "grid", placeItems: "center", height: "260px", color: "var(--muted)" }}>No complaint data available.</div>
                 ) : (
                   <div style={{ width: "100%", height: "260px", display: "flex", alignItems: "center" }}>
                     <div style={{ flex: 1, height: "100%" }}>
@@ -694,7 +733,7 @@ export default function AdminDashboard() {
               <div className="glass-card" style={{ padding: "24px", minHeight: "360px" }}>
                 <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#fff", marginBottom: "20px" }}>Workflow Completion Breakdown</h4>
                 {complaints.length === 0 ? (
-                  <div style={{ display: "grid", placeItems: "center", height: "260px", color: "var(--muted)" }}>No telemetry data available.</div>
+                  <div style={{ display: "grid", placeItems: "center", height: "260px", color: "var(--muted)" }}>No complaint data available.</div>
                 ) : (
                   <div style={{ width: "100%", height: "260px", display: "flex", alignItems: "center" }}>
                     <div style={{ flex: 1, height: "100%" }}>
@@ -728,11 +767,11 @@ export default function AdminDashboard() {
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                     <div style={{ background: "rgba(0,0,0,0.08)", padding: "14px", borderRadius: "8px" }}>
                       <span style={{ fontSize: "11px", textTransform: "uppercase", color: "var(--muted)", display: "block", marginBottom: "4px" }}>Average Dispatch SLA</span>
-                      <strong style={{ fontSize: "18px", color: "#fff" }}>18.5 Hours</strong>
+                      <strong style={{ fontSize: "18px", color: "#fff" }}>{averageSla}</strong>
                     </div>
                     <div style={{ background: "rgba(0,0,0,0.08)", padding: "14px", borderRadius: "8px" }}>
-                      <span style={{ fontSize: "11px", textTransform: "uppercase", color: "var(--muted)", display: "block", marginBottom: "4px" }}>AI Classification Hit</span>
-                      <strong style={{ fontSize: "18px", color: "#fff" }}>{avgAccuracy}%</strong>
+                      <span style={{ fontSize: "11px", textTransform: "uppercase", color: "var(--muted)", display: "block", marginBottom: "4px" }}>Average AI Confidence</span>
+                      <strong style={{ fontSize: "18px", color: "#fff" }}>{avgAccuracy}</strong>
                     </div>
                   </div>
 
@@ -741,9 +780,9 @@ export default function AdminDashboard() {
                       AI Performance Assessment
                     </span>
                     <ul style={{ fontSize: "12.5px", color: "var(--muted)", paddingLeft: "16px", display: "grid", gap: "6px", lineHeight: "1.4" }}>
-                      <li>96%+ routing accuracy ensures minimal manual redirection overhead.</li>
-                      <li>Priority detection identifies hazards (such as school zone risks) correctly 100% of the time.</li>
-                      <li>Recommendation: Monitor incoming sanitation cases near market areas where collection dispatch delays peak on weekends.</li>
+                      {recommendations.map((rec, i) => (
+                        <li key={i}>{rec}</li>
+                      ))}
                     </ul>
                   </div>
                 </div>
