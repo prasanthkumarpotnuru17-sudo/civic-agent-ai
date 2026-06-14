@@ -40,6 +40,15 @@ This creates a faster, smarter, and more transparent governance workflow.
 
 ---
 
+## 🚀 Live Demo
+
+Citizen Portal:
+https://civic-agent-ai.vercel.app/
+
+Admin Dashboard:
+https://civic-agent-ai.vercel.app/admin/dashboard
+
+
 ## ✨ Key Features
 
 ### 👤 Citizen Portal
