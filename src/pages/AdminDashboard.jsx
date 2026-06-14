@@ -193,18 +193,18 @@ export default function AdminDashboard() {
   const statusCounts = { "Pending": pendingCount, "In Progress": inProgressCount, "Resolved": resolvedCount };
   const statusChartData = Object.entries(statusCounts).map(([name, count]) => ({ name, value: count }));
 
-  // Colors for Pie Charts (Premium Vibrant Palette)
+  // Colors for Pie Charts (Accessible Light Mode Palette)
   const PRIORITY_COLORS = {
-    "Critical": "#ff0055", // Neon Red/Pink
-    "High": "#ffaa00", // Neon Orange
-    "Medium": "#00e5ff", // Cyan
-    "Low": "#94a3b8"  // Slate Gray
+    "Critical": "#ef4444", // Red
+    "High": "#f97316", // Orange
+    "Medium": "#3b82f6", // Blue
+    "Low": "#22c55e"  // Green
   };
 
   const STATUS_COLORS = {
-    "Pending": "#ffbb00", // Gold
-    "In Progress": "#aa00ff", // Neon Purple
-    "Resolved": "#00ffcc"  // Mint Green
+    "Pending": "#9ca3af", // Gray
+    "In Progress": "#f97316", // Orange
+    "Resolved": "#22c55e"  // Green
   };
 
   // AI Insights
@@ -671,18 +671,18 @@ export default function AdminDashboard() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "24px" }}>
               
               {/* Complaints by Department Chart */}
-              <div className="glass-card" style={{ padding: "24px", minHeight: "360px" }}>
-                <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#fff", marginBottom: "20px" }}>Grievances by Municipal Sector</h4>
+              <div style={{ padding: "24px", minHeight: "360px", background: "#ffffff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)" }}>
+                <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#374151", marginBottom: "20px" }}>Grievances by Municipal Sector</h4>
                 {complaints.length === 0 ? (
-                  <div style={{ display: "grid", placeItems: "center", height: "260px", color: "var(--muted)" }}>No complaint data available.</div>
+                  <div style={{ display: "grid", placeItems: "center", height: "260px", color: "#6b7280" }}>No complaint data available.</div>
                 ) : (
                   <div style={{ width: "100%", height: "260px" }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={departmentChartData}>
-                        <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
-                        <YAxis stroke="#64748b" fontSize={11} tickLine={false} />
-                        <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", color: "#fff" }} />
-                        <Bar dataKey="complaints" fill="#aa00ff" radius={[4, 4, 0, 0]} />
+                        <XAxis dataKey="name" stroke="#374151" fontSize={11} tickLine={false} />
+                        <YAxis stroke="#374151" fontSize={11} tickLine={false} />
+                        <Tooltip contentStyle={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "8px", color: "#111827" }} itemStyle={{ color: "#111827" }} />
+                        <Bar dataKey="complaints" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -690,10 +690,10 @@ export default function AdminDashboard() {
               </div>
 
               {/* Priority Distribution Chart */}
-              <div className="glass-card" style={{ padding: "24px", minHeight: "360px" }}>
-                <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#fff", marginBottom: "20px" }}>Severity Distribution</h4>
+              <div style={{ padding: "24px", minHeight: "360px", background: "#ffffff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)" }}>
+                <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#374151", marginBottom: "20px" }}>Severity Distribution</h4>
                 {complaints.length === 0 ? (
-                  <div style={{ display: "grid", placeItems: "center", height: "260px", color: "var(--muted)" }}>No complaint data available.</div>
+                  <div style={{ display: "grid", placeItems: "center", height: "260px", color: "#6b7280" }}>No complaint data available.</div>
                 ) : (
                   <div style={{ width: "100%", height: "260px", display: "flex", alignItems: "center" }}>
                     <div style={{ flex: 1, height: "100%" }}>
@@ -712,7 +712,7 @@ export default function AdminDashboard() {
                               <Cell key={`cell-${entry.name}`} fill={PRIORITY_COLORS[entry.name] || "#3b82f6"} />
                             ))}
                           </Pie>
-                          <Tooltip />
+                          <Tooltip contentStyle={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "8px", color: "#111827" }} itemStyle={{ color: "#111827" }} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
@@ -720,8 +720,8 @@ export default function AdminDashboard() {
                       {priorityChartData.map(entry => (
                         <div key={entry.name} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px" }}>
                           <span style={{ width: "12px", height: "12px", borderRadius: "50%", background: PRIORITY_COLORS[entry.name] }}></span>
-                          <span style={{ color: "var(--muted)", fontWeight: "600" }}>{entry.name}:</span>
-                          <strong style={{ color: "#fff" }}>{entry.value}</strong>
+                          <span style={{ color: "#4b5563", fontWeight: "600" }}>{entry.name}:</span>
+                          <strong style={{ color: "#111827" }}>{entry.value}</strong>
                         </div>
                       ))}
                     </div>
@@ -730,10 +730,10 @@ export default function AdminDashboard() {
               </div>
 
               {/* Status Breakdown Chart */}
-              <div className="glass-card" style={{ padding: "24px", minHeight: "360px" }}>
-                <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#fff", marginBottom: "20px" }}>Workflow Completion Breakdown</h4>
+              <div style={{ padding: "24px", minHeight: "360px", background: "#ffffff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)" }}>
+                <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#374151", marginBottom: "20px" }}>Workflow Completion Breakdown</h4>
                 {complaints.length === 0 ? (
-                  <div style={{ display: "grid", placeItems: "center", height: "260px", color: "var(--muted)" }}>No complaint data available.</div>
+                  <div style={{ display: "grid", placeItems: "center", height: "260px", color: "#6b7280" }}>No complaint data available.</div>
                 ) : (
                   <div style={{ width: "100%", height: "260px", display: "flex", alignItems: "center" }}>
                     <div style={{ flex: 1, height: "100%" }}>
@@ -746,12 +746,13 @@ export default function AdminDashboard() {
                             outerRadius={80}
                             dataKey="value"
                             label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            labelLine={false}
                           >
                             {statusChartData.map((entry) => (
                               <Cell key={`cell-${entry.name}`} fill={STATUS_COLORS[entry.name] || "#3b82f6"} />
                             ))}
                           </Pie>
-                          <Tooltip />
+                          <Tooltip contentStyle={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "8px", color: "#111827" }} itemStyle={{ color: "#111827" }} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
@@ -760,26 +761,26 @@ export default function AdminDashboard() {
               </div>
 
               {/* Advanced AI Insights Panel */}
-              <div className="glass-card" style={{ padding: "24px", minHeight: "360px", display: "flex", flexDirection: "column" }}>
-                <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#fff", marginBottom: "16px" }}>AI System Performance & Recommendations</h4>
+              <div style={{ padding: "24px", minHeight: "360px", background: "#ffffff", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)", display: "flex", flexDirection: "column" }}>
+                <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#374151", marginBottom: "16px" }}>AI System Performance & Recommendations</h4>
                 
                 <div style={{ flex: 1, display: "grid", gap: "16px" }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                    <div style={{ background: "rgba(0,0,0,0.08)", padding: "14px", borderRadius: "8px" }}>
-                      <span style={{ fontSize: "11px", textTransform: "uppercase", color: "var(--muted)", display: "block", marginBottom: "4px" }}>Average Dispatch SLA</span>
-                      <strong style={{ fontSize: "18px", color: "#fff" }}>{averageSla}</strong>
+                    <div style={{ background: "#f8fafc", padding: "14px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                      <span style={{ fontSize: "11px", fontWeight: "600", textTransform: "uppercase", color: "#4b5563", display: "block", marginBottom: "4px" }}>Average Dispatch SLA</span>
+                      <strong style={{ fontSize: "18px", color: "#111827" }}>{averageSla}</strong>
                     </div>
-                    <div style={{ background: "rgba(0,0,0,0.08)", padding: "14px", borderRadius: "8px" }}>
-                      <span style={{ fontSize: "11px", textTransform: "uppercase", color: "var(--muted)", display: "block", marginBottom: "4px" }}>Average AI Confidence</span>
-                      <strong style={{ fontSize: "18px", color: "#fff" }}>{avgAccuracy}</strong>
+                    <div style={{ background: "#f8fafc", padding: "14px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                      <span style={{ fontSize: "11px", fontWeight: "600", textTransform: "uppercase", color: "#4b5563", display: "block", marginBottom: "4px" }}>Average AI Confidence</span>
+                      <strong style={{ fontSize: "18px", color: "#111827" }}>{avgAccuracy}</strong>
                     </div>
                   </div>
 
-                  <div style={{ background: "rgba(0,0,0,0.08)", padding: "16px", borderRadius: "10px", flex: 1 }}>
-                    <span style={{ fontSize: "11px", fontWeight: "700", color: "var(--blue)", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
+                  <div style={{ background: "#f8fafc", padding: "16px", borderRadius: "10px", flex: 1, border: "1px solid #e2e8f0" }}>
+                    <span style={{ fontSize: "11px", fontWeight: "700", color: "#2563eb", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
                       AI Performance Assessment
                     </span>
-                    <ul style={{ fontSize: "12.5px", color: "var(--muted)", paddingLeft: "16px", display: "grid", gap: "6px", lineHeight: "1.4" }}>
+                    <ul style={{ fontSize: "12.5px", color: "#4b5563", paddingLeft: "16px", display: "grid", gap: "6px", lineHeight: "1.4" }}>
                       {recommendations.map((rec, i) => (
                         <li key={i}>{rec}</li>
                       ))}
